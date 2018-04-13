@@ -23,26 +23,33 @@ public class KafkaApi {
 
 	public KafkaApi(){
 		Properties props = new Properties();
+        //收到leader的回复
         props.put("acks", "1");
+        //超过两秒认为失败
 		props.put("request.timeout.ms",2000);
-		props.put("max.block.ms",2000);
+		//获取内存和meta信息的最长等待时间
+        props.put("max.block.ms",2000);
 		props.put("retries",3);
-		props.put("bootstrap.servers", GlobalConfig.kafka_host + ":" + GlobalConfig.kafka_port);
+		props.put("bootstrap.servers", GlobalConfig.kafka_server);
         props.put("client.id", "DemoProducer");
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
  		props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         producer = new KafkaProducer<>(props);
+        //收到replication回复
         props.put("acks", "all");
         ackProducer = new KafkaProducer<>(props);
 	}
 
-	//没有重试
-	public void send(String topic, String value){
+	
+	public void send(String topic, Integer partition, String value){
 		try {
 			long startTime = System.currentTimeMillis();
-			producer.send(new ProducerRecord<>(topic,value)).get();
+			producer.send(new ProducerRecord<>(topic,partition,null,value)).get();
+            return true;
 		}catch( InterruptedException| ExecutionException e){
-			e.printStackTrace();
+            e.printStackTrace();
+            return false;
+            //log
 			// need reopen the producer
 		}
 	}
@@ -56,37 +63,3 @@ public class KafkaApi {
 	}
 }
 
-class DemoCallBack implements Callback {
-
-    private final long startTime;
-    private final String topic;
-    private final String message;
-
-    public DemoCallBack(long startTime, String topic, String message) {
-        this.startTime = startTime;
-        this.topic = topic;
-        this.message = message;
-    }
-
-    /**
-     * A callback method the user can implement to provide asynchronous handling of request completion. This method will
-     * be called when the record sent to the server has been acknowledged. Exactly one of the arguments will be
-     * non-null.
-     *
-     * @param metadata  The metadata for the record that was sent (i.e. the partition and offset). Null if an error
-     *                  occurred.
-     * @param exception The exception thrown during processing of this record. Null if no error occurred.
-     */
-    public void onCompletion(RecordMetadata metadata, Exception exception) {
-        long elapsedTime = System.currentTimeMillis() - startTime;
-        if (metadata != null) {
-            // System.out.println(
-            //     "message(" + topic + ", " + message + ") sent to partition(" + metadata.partition() +
-            //         "), " +
-            //         "offset(" + metadata.offset() + ") in " + elapsedTime + " ms");
-        } else {
-            exception.printStackTrace();
-            System.out.println("topic :"+topic+", message:"+message);
-        }
-    }
-}
