@@ -41,7 +41,7 @@ public class KafkaApi {
 	}
 
 	
-	public void send(String topic, Integer partition, String value){
+	public boolean send(String topic, Integer partition, String value){
 		try {
 			long startTime = System.currentTimeMillis();
 			producer.send(new ProducerRecord<>(topic,partition,null,value)).get();
@@ -54,11 +54,13 @@ public class KafkaApi {
 		}
 	}
 
-	public void sendAcks(String topic, String value){
+	public boolean sendAcks(String topic, Integer partition, String value){
 		try {
-			ackProducer.send(new ProducerRecord<>(topic,value)).get();
+			ackProducer.send(new ProducerRecord<>(topic,partition,null, value)).get();
+			return true;
 		}catch(InterruptedException | ExecutionException e){
 			e.printStackTrace();
+			return false;
 		}
 	}
 }

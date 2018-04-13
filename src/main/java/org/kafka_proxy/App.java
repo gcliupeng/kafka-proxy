@@ -112,7 +112,7 @@ public class App {
 			Ret resRet = new Ret();
 			String topic = req.queryParams("topic");
 			String message = req.queryParams("message");
-			Integer partition = new Interger(req.queryParams("partition");   
+			Integer partition = new Integer(req.queryParams("partition"));   
 			String deliveryMode = req.queryParams("delivery_mode");
 			if (deliveryMode == null || "".equals(deliveryMode)) {
 				deliveryMode = "1";
@@ -131,8 +131,8 @@ public class App {
 				log.warn("发送失败,topic:{},partition:{}",topic,partition);
 			}
 			long spend = System.currentTimeMillis() - startTime;
-			log.info("amqp_queue_pub:[queue]:{}[payload]:{}[delivery_mode]:{}[spend]:{}ms[ret]:{}", queue, payload,
-					deliveryMode, spend, resRet.getCode());
+			//log.info("amqp_queue_pub:[queue]:{}[payload]:{}[delivery_mode]:{}[spend]:{}ms[ret]:{}", queue, payload,
+			//		deliveryMode, spend, resRet.getCode());
 			JSONObject obj = JSONObject.fromObject(resRet);
 			return obj.toString();
 		});
