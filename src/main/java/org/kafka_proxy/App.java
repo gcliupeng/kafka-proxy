@@ -31,7 +31,7 @@ public class App {
 				log.info("receive signal to shutdown!");
 				isStopping =true;
 				try {
-					Thread.sleep(5000);
+					Thread.sleep(50);
 				} catch (InterruptedException e) {
 				}
 			}
@@ -102,7 +102,14 @@ public class App {
 		});
 		*/
 
-		get("/send",(req,res)->{
+		post("/testR",(req,res)->{
+			byte[] body = req.bodyAsBytes();
+			System.out.println(req.queryParams("topic"));
+			System.out.println(req.queryParams("partition"));
+			System.out.println(body.length);
+			return "ok";
+		});
+		post("/send",(req,res)->{
 
 			if(isStopping){
 				log.warn("发送失败,server is stopping");
@@ -111,8 +118,10 @@ public class App {
 			long startTime = System.currentTimeMillis();
 			Ret resRet = new Ret();
 			String topic = req.queryParams("topic");
-			String message = req.queryParams("message");
-			Integer partition = new Integer(req.queryParams("partition"));   
+			Integer partition = new Integer(req.queryParams("partition"));
+			byte[] body = req.bodyAsBytes(); 
+			String message = new String(body);
+			
 			String deliveryMode = req.queryParams("delivery_mode");
 			if (deliveryMode == null || "".equals(deliveryMode)) {
 				deliveryMode = "1";
@@ -131,8 +140,8 @@ public class App {
 				log.warn("发送失败,topic:{},partition:{}",topic,partition);
 			}
 			long spend = System.currentTimeMillis() - startTime;
-			//log.info("amqp_queue_pub:[queue]:{}[payload]:{}[delivery_mode]:{}[spend]:{}ms[ret]:{}", queue, payload,
-			//		deliveryMode, spend, resRet.getCode());
+			log.info("send ok:[topic]:{}[partition]:{}[delivery_mode]:{}[spend]:{}ms[ret]:{}", topic, partition,
+					deliveryMode, spend, resRet.getCode());
 			JSONObject obj = JSONObject.fromObject(resRet);
 			return obj.toString();
 		});
