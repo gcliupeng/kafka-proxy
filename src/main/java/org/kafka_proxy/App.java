@@ -117,11 +117,10 @@ public class App {
 			}
 			long startTime = System.currentTimeMillis();
 			Ret resRet = new Ret();
+			byte[] body = req.bodyAsBytes(); 
 			String topic = req.queryParams("topic");
 			Integer partition = new Integer(req.queryParams("partition"));
-			byte[] body = req.bodyAsBytes(); 
 			String message = new String(body);
-			
 			String deliveryMode = req.queryParams("delivery_mode");
 			if (deliveryMode == null || "".equals(deliveryMode)) {
 				deliveryMode = "1";
