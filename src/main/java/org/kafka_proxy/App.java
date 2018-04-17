@@ -9,6 +9,7 @@ import org.kafka_proxy.config.GlobalConfig;
 // import org.apache.kafka.clients.producer.KafkaProducer;
 // import org.apache.kafka.clients.producer.ProducerRecord;
 import org.kafka_proxy.kafka.KafkaApi;
+import org.kafka_proxy.kafka.KafkaApiBin;
 import org.kafka_proxy.util.CommonUtil;
 import org.kafka_proxy.vo.Ret;
 
@@ -22,6 +23,7 @@ public class App {
 	private static final Logger log = LoggerFactory.getLogger(App.class);
 	private static boolean isStopping = false;
 	private static KafkaApi kafkaApi;
+	private static KafkaApiBin kafkaApiBin;
 	public static void main(String[] args) {
 		
 		//平滑停止，sleep足够长时间，尽量保证消息送达
@@ -49,6 +51,7 @@ public class App {
 			System.exit(100);
 		});
 		kafkaApi = new KafkaApi();
+		kafkaApiBin = new KafkaApiBin();
 
 		String value = "hello world";
         for(int i=0;i<=2048;i++)
@@ -120,17 +123,32 @@ public class App {
 			byte[] body = req.bodyAsBytes(); 
 			String topic = req.queryParams("topic");
 			Integer partition = new Integer(req.queryParams("partition"));
-			String message = new String(body);
+			//String message = new String(body);
 			String deliveryMode = req.queryParams("delivery_mode");
 			if (deliveryMode == null || "".equals(deliveryMode)) {
 				deliveryMode = "1";
 			}
-			boolean ret;
-			if(deliveryMode == "1"){
-				ret = kafkaApi.send(topic,partition,message);
-			}else{
-				ret = kafkaApi.sendAcks(topic,partition,message);
+			//默认是发送字符串，message_type = 2 时发送二进制数据
+			String messageType = req.queryParams("message_type");
+			if (messageType == null || "".equals(messageType)) {
+				messageType = "1";
 			}
+			boolean ret;
+			if(messageType == "1"){
+				String message = new String(body);
+				if(deliveryMode == "1"){
+					ret = kafkaApi.send(topic,partition,message);
+				}else{
+					ret = kafkaApi.sendAcks(topic,partition,message);
+				}
+			}else{
+				if(deliveryMode == "1"){
+					ret = kafkaApiBin.send(topic,partition,body);
+				}else{
+					ret = kafkaApiBin.sendAcks(topic,partition,body);
+				}
+			}
+			
 			if (ret) {
 				resRet.setSucCode();
 			} else {
@@ -168,6 +186,7 @@ public class App {
 			JSONObject obj = JSONObject.fromObject(resRet);
 			return obj.toString();
 		});
+
 		get("/index", (req, res) -> {
 			return "under construction!";
 		});
